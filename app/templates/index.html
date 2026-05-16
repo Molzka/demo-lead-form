@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="form-shell">
+  <div class="intro">
+    <p class="eyebrow">LeadForm Demo</p>
+    <h1>Заявка на услугу</h1>
+    <p>Оставьте контакты, и заявка сразу попадет администратору в Telegram и в таблицу.</p>
+  </div>
+
+  <form class="lead-form" action="/lead" method="post">
+    {% if error %}
+      <div class="alert">{{ error }}</div>
+    {% endif %}
+
+    <label>
+      <span>Имя</span>
+      <input name="name" type="text" value="{{ form.name if form else '' }}" autocomplete="name" required>
+    </label>
+
+    <label>
+      <span>Телефон</span>
+      <input name="phone" type="tel" value="{{ form.phone if form else '' }}" autocomplete="tel" required>
+    </label>
+
+    <label>
+      <span>Услуга</span>
+      <select name="service">
+        {% set selected_service = form.service if form else '' %}
+        <option value="Консультация" {{ "selected" if selected_service == "Консультация" else "" }}>Консультация</option>
+        <option value="Аудит сайта" {{ "selected" if selected_service == "Аудит сайта" else "" }}>Аудит сайта</option>
+        <option value="Разработка" {{ "selected" if selected_service == "Разработка" else "" }}>Разработка</option>
+        <option value="Интеграция" {{ "selected" if selected_service == "Интеграция" else "" }}>Интеграция</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Комментарий</span>
+      <textarea name="comment" rows="5">{{ form.comment if form else '' }}</textarea>
+    </label>
+
+    <input name="utm_source" type="hidden" value="{{ request.query_params.get('utm_source', form.utm_source if form else '') }}">
+    <input name="utm_campaign" type="hidden" value="{{ request.query_params.get('utm_campaign', form.utm_campaign if form else '') }}">
+
+    <button type="submit">Оставить заявку</button>
+  </form>
+</section>
+{% endblock %}
+

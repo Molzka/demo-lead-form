@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="result">
+  <p class="eyebrow">Готово</p>
+  <h1>Заявка отправлена</h1>
+  <p>Мы сохранили заявку #{{ lead.id }} и передали уведомление администратору.</p>
+  <div class="actions">
+    <a href="/">Отправить еще одну</a>
+    <a href="/leads">Посмотреть заявки</a>
+  </div>
+</section>
+{% endblock %}
+
