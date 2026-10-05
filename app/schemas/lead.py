@@ -1,4 +1,28 @@
+import re
 from dataclasses import dataclass
+
+FIELD_LIMITS = {
+    "name": 120,
+    "phone": 60,
+    "service": 160,
+    "comment": 2000,
+    "utm_source": 120,
+    "utm_campaign": 160,
+}
+FIELD_LABELS = {
+    "name": "Имя",
+    "phone": "Телефон",
+    "service": "Услуга",
+    "comment": "Комментарий",
+    "utm_source": "Источник перехода",
+    "utm_campaign": "Кампания",
+}
+
+
+class LeadValidationError(ValueError):
+    def __init__(self, field: str, message: str):
+        self.field = field
+        super().__init__(message)
 
 
 @dataclass(frozen=True)
@@ -11,16 +35,22 @@ class LeadCreate:
     utm_campaign: str | None = None
 
     def __post_init__(self) -> None:
-        name = self.name.strip()
-        phone = self.phone.strip()
-        if not name:
-            raise ValueError("Укажите имя.")
-        if not phone:
-            raise ValueError("Укажите телефон.")
+        for field, limit in FIELD_LIMITS.items():
+            value = getattr(self, field) or ""
+            if len(value) > limit:
+                raise LeadValidationError(
+                    field, f"{FIELD_LABELS[field]}: не более {limit} символов."
+                )
+            object.__setattr__(self, field, value.strip())
 
-        object.__setattr__(self, "name", name)
-        object.__setattr__(self, "phone", phone)
-        object.__setattr__(self, "service", self.service.strip())
-        object.__setattr__(self, "comment", self.comment.strip())
-        object.__setattr__(self, "utm_source", (self.utm_source or "").strip())
-        object.__setattr__(self, "utm_campaign", (self.utm_campaign or "").strip())
+        phone = self.phone
+        if not self.name:
+            raise LeadValidationError("name", "Укажите имя.")
+        if not phone:
+            raise LeadValidationError("phone", "Укажите телефон.")
+        digits = re.sub(r"[^0-9]", "", phone)
+        if not re.fullmatch(r"\+?[0-9 ()\-]+", phone) or not 10 <= len(digits) <= 15:
+            raise LeadValidationError(
+                "phone", "Телефон должен содержать от 10 до 15 цифр. Например: +7 (999) 123-45-67."
+            )
+        object.__setattr__(self, "phone", ("+" if phone.startswith("+") else "") + digits)

@@ -5,28 +5,32 @@
   <div class="intro">
     <p class="eyebrow">LeadForm Demo</p>
     <h1>Заявка на услугу</h1>
-    <p>Оставьте контакты, и заявка сразу попадет администратору в Telegram и в таблицу.</p>
+    <p>Оставьте имя и телефон, чтобы администратор мог связаться с вами по поводу услуги.</p>
   </div>
 
   <form class="lead-form" action="/lead" method="post">
     {% if error %}
-      <div class="alert">{{ error }}</div>
+      <div class="alert" id="form-error" role="alert" tabindex="-1" autofocus>{{ error }}</div>
     {% endif %}
 
     <label>
       <span>Имя</span>
-      <input name="name" type="text" value="{{ form.name if form else '' }}" autocomplete="name" required>
+      <input name="name" type="text" value="{{ form.name if form else '' }}" autocomplete="name" maxlength="{{ field_limits.name }}" required {% if error_field == 'name' %}aria-invalid="true" aria-describedby="form-error"{% endif %}>
     </label>
 
     <label>
-      <span>Телефон</span>
-      <input name="phone" type="tel" value="{{ form.phone if form else '' }}" autocomplete="tel" required>
+      <span id="phone-label">Телефон</span>
+      <input name="phone" type="tel" inputmode="tel" value="{{ form.phone if form else '' }}" autocomplete="tel" maxlength="{{ field_limits.phone }}" required aria-labelledby="phone-label" aria-describedby="phone-hint{% if error_field == 'phone' %} form-error{% endif %}" {% if error_field == 'phone' %}aria-invalid="true"{% endif %}>
+      <small class="field-hint" id="phone-hint">От 10 до 15 цифр, например <span class="phone-example">+7 (999) 123-45-67.</span></small>
     </label>
 
     <label>
-      <span>Услуга</span>
-      <select name="service">
+      <span id="service-label">Услуга</span>
+      <select name="service" aria-labelledby="service-label" {% if error_field == 'service' %}aria-invalid="true" aria-describedby="form-error"{% endif %}>
         {% set selected_service = form.service if form else '' %}
+        {% if selected_service not in ['Консультация', 'Аудит сайта', 'Разработка', 'Интеграция'] %}
+        <option value="{{ selected_service }}" selected>{{ selected_service or 'Выберите услугу (необязательно)' }}</option>
+        {% endif %}
         <option value="Консультация" {{ "selected" if selected_service == "Консультация" else "" }}>Консультация</option>
         <option value="Аудит сайта" {{ "selected" if selected_service == "Аудит сайта" else "" }}>Аудит сайта</option>
         <option value="Разработка" {{ "selected" if selected_service == "Разработка" else "" }}>Разработка</option>
@@ -35,12 +39,22 @@
     </label>
 
     <label>
-      <span>Комментарий</span>
-      <textarea name="comment" rows="5">{{ form.comment if form else '' }}</textarea>
+      <span><span id="comment-label">Комментарий</span> <small class="field-hint">необязательно</small></span>
+      <textarea name="comment" rows="4" maxlength="{{ field_limits.comment }}" aria-labelledby="comment-label" aria-describedby="comment-hint{% if error_field == 'comment' %} form-error{% endif %}" {% if error_field == 'comment' %}aria-invalid="true"{% endif %}>{{ form.comment if form else '' }}</textarea>
+      <small class="field-hint" id="comment-hint">Что хотите обсудить? До 2 000 символов.</small>
     </label>
 
-    <input name="utm_source" type="hidden" value="{{ request.query_params.get('utm_source', form.utm_source if form else '') }}">
-    <input name="utm_campaign" type="hidden" value="{{ request.query_params.get('utm_campaign', form.utm_campaign if form else '') }}">
+    {% for field, title in [('utm_source', 'Источник перехода'), ('utm_campaign', 'Кампания')] %}
+      {% set value = form[field] if form else request.query_params.get(field, '') %}
+      {% if error_field == field %}
+        <label>
+          <span>{{ title }}</span>
+          <input name="{{ field }}" type="text" value="{{ value }}" maxlength="{{ field_limits[field] }}" aria-invalid="true" aria-describedby="form-error">
+        </label>
+      {% else %}
+        <input name="{{ field }}" type="hidden" value="{{ value }}">
+      {% endif %}
+    {% endfor %}
 
     <button type="submit">Оставить заявку</button>
   </form>

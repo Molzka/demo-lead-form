@@ -1,7 +1,6 @@
 import csv
 from pathlib import Path
 
-from app.core.config import settings
 from app.models.lead import Lead
 
 CSV_FIELDS = [
@@ -17,8 +16,8 @@ CSV_FIELDS = [
 ]
 
 
-def append_lead_to_csv(lead: Lead) -> None:
-    csv_path = Path(settings.leads_csv_path)
+def append_lead_to_csv(lead: Lead, path: str) -> None:
+    csv_path = Path(path)
     csv_path.parent.mkdir(parents=True, exist_ok=True)
 
     file_exists = csv_path.exists()

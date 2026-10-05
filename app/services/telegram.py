@@ -3,7 +3,7 @@ import logging
 
 import httpx
 
-from app.core.config import settings
+from app.core.config import Settings
 from app.models.lead import Lead
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,7 @@ def build_telegram_message(lead: Lead) -> str:
     return "\n".join(lines)
 
 
-async def send_lead_notification(lead: Lead) -> None:
+async def send_lead_notification(lead: Lead, settings: Settings) -> None:
     if not settings.telegram_enabled:
         return
 
@@ -40,11 +40,13 @@ async def send_lead_notification(lead: Lead) -> None:
         "disable_web_page_preview": True,
     }
 
-    async with httpx.AsyncClient(timeout=10) as client:
-        try:
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
             response = await client.post(url, json=payload)
             response.raise_for_status()
-        except httpx.HTTPError:
-            logger.exception(
-                "Failed to send Telegram notification for lead %s", lead.id
-            )
+            result = response.json()
+            if not isinstance(result, dict) or result.get("ok") is not True:
+                logger.warning("Telegram rejected notification for lead %s", lead.id)
+    except (httpx.HTTPError, ValueError) as exc:
+        # Exception messages/tracebacks can contain the bot token or user data.
+        logger.warning("Telegram failed for lead %s (%s)", lead.id, type(exc).__name__)
